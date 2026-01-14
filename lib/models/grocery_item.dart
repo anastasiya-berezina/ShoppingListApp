@@ -3,7 +3,7 @@
 import 'package:shopping_list_app/models/category.dart';
 
 class GroceryItem {
-  final String id;
+  final int id;
   final String name;
   final int quantity;
   final Category category;
