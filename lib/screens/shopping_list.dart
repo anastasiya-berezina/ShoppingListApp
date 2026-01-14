@@ -30,7 +30,7 @@ class _ShoppingListState extends State<ShoppingList> {
       'shopping-list.json',
     );
     final response = await http.get(url);
-    if(response.statusCode >= 400) {
+    if (response.statusCode >= 400) {
       //error handling
       setState(() {
         _isLoading = false;
@@ -76,10 +76,23 @@ class _ShoppingListState extends State<ShoppingList> {
     });
   }
 
-  void _removeItem(GroceryItem item) {
+  void _removeItem(GroceryItem item) async {
+    final index = _currentGroceryItems.indexOf(item);
     setState(() {
       _currentGroceryItems.remove(item);
     });
+
+    final url = Uri.https(
+      'flutter-demo-35f54-default-rtdb.firebaseio.com',
+      'shopping-list/${item.id}.json',
+    );
+
+    final response = await http.delete(url);
+    if (response.statusCode >= 400) {
+      setState(() {
+        _currentGroceryItems.insert(index, item);
+      });
+    }
   }
 
   @override
@@ -94,14 +107,9 @@ class _ShoppingListState extends State<ShoppingList> {
 
     if (_error != null) {
       content = Center(
-        child: Text(
-          _error!,
-          style: const TextStyle(
-            fontSize: 18,
-          ),
-        ),
+        child: Text(_error!, style: const TextStyle(fontSize: 18)),
       );
-    } 
+    }
 
     if (_currentGroceryItems.isNotEmpty) {
       content = ListView.builder(
@@ -119,28 +127,14 @@ class _ShoppingListState extends State<ShoppingList> {
             ),
             onDismissed: (direction) {
               final removedItem = item;
-              final removedIndex = index;
-              setState(() {
-                _currentGroceryItems.removeWhere((e) => e.id == removedItem.id);
-              });
+              _removeItem(item);
 
               final messenger = ScaffoldMessenger.of(context);
               messenger.clearSnackBars();
               messenger.showSnackBar(
                 SnackBar(
                   content: Text('Removed ${removedItem.name}'),
-                  action: SnackBarAction(
-                    label: 'UNDO',
-                    onPressed: () {
-                      setState(() {
-                        final insertIndex =
-                            removedIndex <= _currentGroceryItems.length
-                            ? removedIndex
-                            : _currentGroceryItems.length;
-                        _currentGroceryItems.insert(insertIndex, removedItem);
-                      });
-                    },
-                  ),
+                  duration: const Duration(seconds: 3),
                 ),
               );
             },
